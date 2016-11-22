@@ -183,6 +183,18 @@ public final class Master
         }
     }
 
+    @Override
+    public void removeColumn(IndependentSet column)
+    {
+        try
+        {
+            masterData.cplex.remove(masterData.getVar(column.associatedPricingProblem,column));
+        } catch (IloException e)
+        {
+            logger.error("Unable to delete column " + column + " from the master model");
+        }
+    }
+
     /**
      * Gets the solution from the master problem
      * 

@@ -162,6 +162,18 @@ public final class Master
         }
     }
 
+    @Override
+    public void removeColumn(CuttingPattern column)
+    {
+        try
+        {
+            cplex.remove(masterData.getVar(column.associatedPricingProblem,column));
+        } catch (IloException e)
+        {
+            logger.error("Unable to delete column " + column + " from the master model");
+        }
+    }
+
     /**
      * Return the solution, i.e columns with non-zero values in the cplex problem
      */
