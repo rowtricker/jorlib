@@ -22,6 +22,7 @@ import org.jorlib.frameworks.columngeneration.master.OptimizationSense;
 import org.jorlib.frameworks.columngeneration.colgenmain.columnmanager.AgingColumnManager;
 import org.jorlib.frameworks.columngeneration.colgenmain.columnmanager.ColumnManager;
 import org.jorlib.frameworks.columngeneration.master.cutGeneration.AbstractInequality;
+import org.jorlib.frameworks.columngeneration.util.SolverStatus;
 import org.jorlib.frameworks.columngeneration.model.ModelInterface;
 import org.jorlib.frameworks.columngeneration.pricing.AbstractPricingProblem;
 import org.jorlib.frameworks.columngeneration.pricing.PricingProblemBundle;
@@ -245,11 +246,15 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
      * 
      * @param timeLimit Future point in time (ms) by which the procedure should be finished. Should
      *        be defined as: {@code System.currentTimeMilis()+<desired runtime>}
+     * @return the {@link SolverStatus} of the column generation procedure
      * @throws TimeLimitExceededException Exception is thrown when time limit is exceeded
      */
-    public void solve(long timeLimit)
+    public SolverStatus solve(long timeLimit)
         throws TimeLimitExceededException
     {
+        // set the solver status
+        SolverStatus status = SolverStatus.UNDECIDED;
+        
         // set time limit pricing problems
         pricingProblemManager.setTimeLimit(timeLimit);
         colGenSolveTime = System.currentTimeMillis();
@@ -264,6 +269,12 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
 
             // Solve the master
             this.invokeMaster(timeLimit);
+            
+            // Stop the solution process if an infeasible solution has been found
+            if (master.getStatus() == SolverStatus.INFEASIBLE) {
+                status = SolverStatus.INFEASIBLE;
+                break;
+            }
 
             // We can stop when the optimality gap is closed. We still need to check for violated
             // inequalities though.
@@ -280,8 +291,10 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
                     if (hasNewCuts)
                         continue;
                     else
+                        status = SolverStatus.OPTIMAL;
                         break;
                 } else
+                    status = SolverStatus.OPTIMAL;
                     break;
             }
 
@@ -293,8 +306,10 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
             foundNewColumns = !newColumns.isEmpty();
 
             // Check whether the boundOnMasterObjective exceeds the cutoff value
-            if (boundOnMasterExceedsCutoffValue())
+            if (boundOnMasterExceedsCutoffValue()) {
+                status = SolverStatus.OPTIMAL;
                 break;
+            }
             else if (System.currentTimeMillis() >= timeLimit) { // Check whether we are still within
                                                                 // the timeLimit
                 notifier.fireTimeLimitExceededEvent();
@@ -324,6 +339,8 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
                                                                                    // value.
         colGenSolveTime = System.currentTimeMillis() - colGenSolveTime;
         notifier.fireFinishCGEvent();
+        
+        return status;
     }
 
     /**
