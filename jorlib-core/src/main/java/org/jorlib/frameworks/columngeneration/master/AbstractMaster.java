@@ -290,6 +290,24 @@ public abstract class AbstractMaster<T extends ModelInterface, U extends Abstrac
     }
 
     /**
+     * Remove a column from the model
+     *
+     * @param column column to remove
+     */
+    public abstract void removeColumn(U column);
+
+    /**
+     * Removes the given columns from the model
+     *
+     * @param columns the columns to remove
+     */
+    public void removeColumns(List<U> columns) {
+        for (U column : columns) {
+            this.removeColumn(column);
+        }
+    }
+
+    /**
      * Returns all columns generated for the given pricing problem.
      * 
      * @param pricingProblem Pricing problem

@@ -19,6 +19,8 @@ import org.jorlib.frameworks.columngeneration.io.TimeLimitExceededException;
 import org.jorlib.frameworks.columngeneration.master.AbstractMaster;
 import org.jorlib.frameworks.columngeneration.master.MasterData;
 import org.jorlib.frameworks.columngeneration.master.OptimizationSense;
+import org.jorlib.frameworks.columngeneration.colgenmain.columnmanager.AgingColumnManager;
+import org.jorlib.frameworks.columngeneration.colgenmain.columnmanager.ColumnManager;
 import org.jorlib.frameworks.columngeneration.master.cutGeneration.AbstractInequality;
 import org.jorlib.frameworks.columngeneration.model.ModelInterface;
 import org.jorlib.frameworks.columngeneration.pricing.AbstractPricingProblem;
@@ -65,6 +67,8 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
     protected final PricingProblemManager<T, U, V> pricingProblemManager;
     /** Helper class which notifies {@link CGListener} **/
     protected final CGNotifier notifier;
+    /** The used column column manager. */
+    protected ColumnManager<T, U, V> columnManager;
 
     /** Defines whether the master problem is a minimization or a maximization problem **/
     protected final OptimizationSense optimizationSenseMaster;
@@ -126,7 +130,11 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
         this.solvers = solvers;
         this.cutoffValue = cutoffValue;
         this.boundOnMasterObjective = boundOnMasterObjective;
+        columnManager = new AgingColumnManager<>(100);
+        
+        // Add initial columns to master problem and column manager
         master.addColumns(initSolution);
+        columnManager.addColumns(initSolution);
 
         // Generate the pricing problem instances
         Map<Class<? extends AbstractPricingProblemSolver<T, U, V>>,
@@ -200,7 +208,12 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
         this.pricingProblems = pricingProblems;
         this.solvers = solvers;
         this.pricingProblemManager = pricingProblemManager;
+        columnManager = new AgingColumnManager<>(100);
+        
+        // Add initial columns to master and column manager
         master.addColumns(initSolution);
+        columnManager.addColumns(initSolution);
+        
         this.cutoffValue = cutoffValue;
         this.boundOnMasterObjective = boundOnMasterObjective;
 
@@ -325,7 +338,32 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
     {
         notifier.fireStartMasterEvent();
         long time = System.currentTimeMillis();
+
+        // Update the currently used columns
+        Set<U> currentColumns = columnManager.getCurrentColumns();
+        for (U column : currentColumns)
+        {
+            if (!master.getColumns(column.associatedPricingProblem).contains(column))
+            {
+                master.addColumn(column);
+            }
+        }
+        for (V pricingProblem : pricingProblems)
+        {
+            for (U column : master.getColumns(pricingProblem))
+            {
+                if (!currentColumns.contains(column))
+                {
+                    master.removeColumn(column);
+                }
+            }
+        }
+
         master.solve(timeLimit);
+
+        // Update the column manager
+        columnManager.updateColumns();
+
         objectiveMasterProblem = master.getObjective();
         masterSolveTime += (System.currentTimeMillis() - time);
         notifier.fireFinishMasterEvent();
@@ -379,6 +417,7 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
             for (U column : newColumns) {
                 master.addColumn(column);
             }
+            columnManager.addColumns(newColumns);
         }
         return newColumns;
     }
@@ -542,6 +581,17 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
     {
         master.close();
         pricingProblemManager.close();
+    }
+
+
+    /**
+     * Sets the column manager that will be used in the column generation.
+     *
+     * @param columnManager the {@link ColumnManager} to be used.
+     */
+    public void setColumnManager(ColumnManager<T, U, V> columnManager)
+    {
+        this.columnManager = columnManager;
     }
 
     /**
