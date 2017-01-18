@@ -4,8 +4,8 @@ import org.jorlib.frameworks.columngeneration.colgenmain.AbstractColumn;
 import org.jorlib.frameworks.columngeneration.model.ModelInterface;
 import org.jorlib.frameworks.columngeneration.pricing.AbstractPricingProblem;
 
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -22,7 +22,7 @@ public class PassThroughColumnManager<T extends ModelInterface, V extends Abstra
     private final Set<W> columns = new HashSet<>();
 
     @Override
-    public void addColumns(List<W> newColumns)
+    public void addColumns(Collection<W> newColumns)
     {
         columns.addAll(newColumns);
     }
