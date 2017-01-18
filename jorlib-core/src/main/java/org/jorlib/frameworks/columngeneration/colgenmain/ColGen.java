@@ -579,6 +579,7 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
      */
     public void setColumnManager(ColumnManager<T, U, V> columnManager)
     {
+        columnManager.addColumns(this.columnManager.getCurrentColumns());
         this.columnManager = columnManager;
     }
 

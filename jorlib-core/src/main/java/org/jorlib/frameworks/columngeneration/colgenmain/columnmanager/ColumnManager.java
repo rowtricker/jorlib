@@ -16,7 +16,7 @@ import org.jorlib.frameworks.columngeneration.colgenmain.AbstractColumn;
 import org.jorlib.frameworks.columngeneration.model.ModelInterface;
 import org.jorlib.frameworks.columngeneration.pricing.AbstractPricingProblem;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -27,7 +27,7 @@ import java.util.Set;
  */
 public interface ColumnManager<T extends ModelInterface, U extends AbstractColumn<T, V>, V extends AbstractPricingProblem<T, ? extends AbstractColumn<T, V>>> {
 
-    void addColumns(List<U> newColumns);
+    void addColumns(Collection<U> newColumns);
 
     void updateColumns();
 
