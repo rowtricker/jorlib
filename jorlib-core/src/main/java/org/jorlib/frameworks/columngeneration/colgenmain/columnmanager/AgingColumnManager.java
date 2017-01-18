@@ -41,7 +41,7 @@ public class AgingColumnManager<T extends ModelInterface, U extends AbstractColu
     }
 
     @Override
-    public void addColumns(List<U> newColumns)
+    public void addColumns(Collection<U> newColumns)
     {
         for (U column : newColumns)
         {
