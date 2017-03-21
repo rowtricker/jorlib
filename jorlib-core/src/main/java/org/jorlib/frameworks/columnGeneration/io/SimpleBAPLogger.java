@@ -28,11 +28,9 @@ package org.jorlib.frameworks.columnGeneration.io;
 
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.AbstractBranchAndPrice;
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.EventHandling.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
@@ -43,7 +41,8 @@ import java.text.NumberFormat;
  * @version 5-5-2015
  */
 public class SimpleBAPLogger implements BAPListener{
-    protected BufferedWriter writer;
+    /** The used logger **/
+    protected Logger logger = LoggerFactory.getLogger(BAPListener.class);
     protected NumberFormat formatter;
 
     /** Branch-and-Price node ID of node currently being solved**/
@@ -79,30 +78,10 @@ public class SimpleBAPLogger implements BAPListener{
     /**
      * Create a new logger which writes its output the the file specified
      * @param branchAndPrice Branch-and-Price instance for which this logger is created.
-     * @param outputFile file to redirect the output to.
      */
-    public SimpleBAPLogger(AbstractBranchAndPrice branchAndPrice, File outputFile){
-        try {
-            writer=new BufferedWriter(new FileWriter(outputFile));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public SimpleBAPLogger(AbstractBranchAndPrice branchAndPrice){
         formatter=new DecimalFormat("#0.00");
         branchAndPrice.addBranchAndPriceEventListener(this);
-    }
-
-    /**
-     * Write a single line of text to the output file
-     * @param line line of text to be written
-     */
-    protected void writeLine(String line){
-        try {
-            writer.write(line);
-            writer.newLine();
-            writer.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -125,21 +104,17 @@ public class SimpleBAPLogger implements BAPListener{
      * Construct a single line in the log file, and write it to the output file
      */
     protected void constructAndWriteLine(){
-        this.writeLine(String.valueOf(bapNodeID) + "\t" + parentNodeID + "\t" + objectiveIncumbentSolution + "\t" + nodeBound + "\t" + formatter.format(nodeValue) + "\t" + cgIterations + "\t" + timeSolvingMaster + "\t" + timeSolvingPricing + "\t" + nrGeneratedColumns + "\t" + nodeStatus + "\t" + nodesInQueue);
+        logger.info(String.valueOf(bapNodeID) + "\t" + parentNodeID + "\t" + objectiveIncumbentSolution + "\t" + nodeBound + "\t" + formatter.format(nodeValue) + "\t" + cgIterations + "\t" + timeSolvingMaster + "\t" + timeSolvingPricing + "\t" + nrGeneratedColumns + "\t" + nodeStatus + "\t" + nodesInQueue);
     }
 
     @Override
     public void startBAP(StartEvent startEvent) {
-        this.writeLine("BAPNodeID \t parentNodeID \t objectiveIncumbentSolution \t nodeBound \t nodeValue \t cgIterations \t t_master \t t_pricing \t nrGenColumns \t solutionStatus \t nodesInQueue");
+        logger.info("BAPNodeID \t parentNodeID \t objectiveIncumbentSolution \t nodeBound \t nodeValue \t cgIterations \t t_master \t t_pricing \t nrGenColumns \t solutionStatus \t nodesInQueue");
     }
 
     @Override
     public void finishBAP(FinishEvent finishEvent) {
-        try {
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // Do nothing
     }
 
     @Override

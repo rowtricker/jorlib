@@ -28,11 +28,10 @@ package org.jorlib.frameworks.columnGeneration.io;
 
 import org.jorlib.frameworks.columnGeneration.branchAndPrice.EventHandling.*;
 import org.jorlib.frameworks.columnGeneration.colgenMain.ColGen;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
@@ -43,7 +42,8 @@ import java.text.NumberFormat;
  * @version 5-5-2015
  */
 public class SimpleCGLogger implements CGListener{
-    protected BufferedWriter writer;
+    /** The used logger **/
+    protected Logger logger = LoggerFactory.getLogger(SimpleCGLogger.class);
     protected NumberFormat formatter;
 
     /** Keeps track of the number of column generations. A regular iteration consist of solving the master problem and the pricing problem **/
@@ -78,27 +78,8 @@ public class SimpleCGLogger implements CGListener{
      * @param outputFile file to redirect the output to.
      */
     public SimpleCGLogger(ColGen colGen, File outputFile){
-        try {
-            writer=new BufferedWriter(new FileWriter(outputFile));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         formatter=new DecimalFormat("#0.00");
         colGen.addCGEventListener(this);
-    }
-
-    /**
-     * Write a single line of text to the output file
-     * @param line line of text to be written
-     */
-    protected void writeLine(String line){
-        try {
-            writer.write(line);
-            writer.newLine();
-            writer.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -119,21 +100,17 @@ public class SimpleCGLogger implements CGListener{
      * Construct a single line in the log file, and write it to the output file
      */
     protected void constructAndWriteLine(){
-        this.writeLine(String.valueOf(cgIteration) + "\t" + formatter.format(boundOnMasterObjective) + "\t" + formatter.format(objective) + "\t" + cutoffValue + "\t"  + timeSolvingMaster + "\t" + timeSolvingPricing + "\t"+ nrGeneratedColumns + "\t" + pricingSolver);
+        logger.info(String.valueOf(cgIteration) + "\t" + formatter.format(boundOnMasterObjective) + "\t" + formatter.format(objective) + "\t" + cutoffValue + "\t"  + timeSolvingMaster + "\t" + timeSolvingPricing + "\t"+ nrGeneratedColumns + "\t" + pricingSolver);
     }
 
     @Override
     public void startCG(StartEvent startEvent) {
-        this.writeLine("iteration \t boundOnMasterObjective \t objectiveMasterProblem \t cutoffValue \t t_master \t t_pricing \t nrGenColumns \t pricingSolver");
+        logger.info("iteration \t boundOnMasterObjective \t objectiveMasterProblem \t cutoffValue \t t_master \t t_pricing \t nrGenColumns \t pricingSolver");
     }
 
     @Override
     public void finishCG(FinishEvent finishEvent) {
-        try {
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // Do nothing
     }
 
     @Override
