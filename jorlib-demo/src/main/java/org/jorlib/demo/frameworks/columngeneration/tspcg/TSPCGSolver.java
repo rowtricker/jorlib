@@ -22,6 +22,7 @@ import org.jorlib.demo.frameworks.columngeneration.tspcg.cg.master.cuts.SubtourI
 import org.jorlib.demo.frameworks.columngeneration.tspcg.model.MatchingColor;
 import org.jorlib.demo.frameworks.columngeneration.tspcg.model.TSP;
 import org.jorlib.frameworks.columngeneration.colgenmain.ColGen;
+import org.jorlib.frameworks.columngeneration.colgenmain.TimeLimit;
 import org.jorlib.frameworks.columngeneration.io.SimpleCGLogger;
 import org.jorlib.frameworks.columngeneration.io.SimpleDebugger;
 import org.jorlib.frameworks.columngeneration.io.TimeLimitExceededException;
@@ -31,6 +32,7 @@ import org.jorlib.io.tsplibreader.TSPLibTour;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -108,7 +110,7 @@ public final class TSPCGSolver
 
         // Solve the problem through column generation
         try {
-            cg.solve(System.currentTimeMillis() + 1000L);
+            cg.solve(new TimeLimit<>(cg, Duration.ofMillis(1000)));
         } catch (TimeLimitExceededException e) {
             e.printStackTrace();
         }

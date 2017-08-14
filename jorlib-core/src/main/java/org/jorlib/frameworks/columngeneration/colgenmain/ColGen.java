@@ -68,6 +68,8 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
 
     /** Defines whether the master problem is a minimization or a maximization problem **/
     protected final OptimizationSense optimizationSenseMaster;
+    /** The considered stopping criteria. **/
+    protected List<StoppingCondition> stoppingConditions;
     /** Objective value of column generation procedure **/
     protected double objectiveMasterProblem;
     /**
@@ -231,9 +233,17 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
      *        be defined as: {@code System.currentTimeMilis()+<desired runtime>}
      * @throws TimeLimitExceededException Exception is thrown when time limit is exceeded
      */
-    public void solve(long timeLimit)
+    public void solve(StoppingCondition<T, U, V>... stoppingConditions)
         throws TimeLimitExceededException
     {
+        // find if a time limit is present
+        long timeLimit = Long.MAX_VALUE;
+        for (StoppingCondition<T,U,V> stoppingCondition : stoppingConditions) {
+            if (stoppingCondition instanceof TimeLimit) {
+                timeLimit = System.currentTimeMillis() + ((TimeLimit<T,U,V>) stoppingCondition).getTimeLimit();
+            }
+        }
+        
         // set time limit pricing problems
         pricingProblemManager.setTimeLimit(timeLimit);
         colGenSolveTime = System.currentTimeMillis();
