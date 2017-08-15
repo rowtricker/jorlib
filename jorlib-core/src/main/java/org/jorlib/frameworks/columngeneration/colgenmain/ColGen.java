@@ -104,7 +104,7 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
     /** Total number of columns generated and added to the master problem **/
     protected int nrGeneratedColumns = 0;
     /** If new columns have been iterated on the last iteration. */
-    private boolean columnsGenerated = true;
+    protected boolean columnsGenerated = true;
 
     /**
      * Create a new column generation instance
