@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Main class defining the Column Generation procedure. It keeps track of all the data structures.
- * Its {@link #solve(long timeLimit) solve} method is the core of this class. Assumptions: the
+ * Its {@link #solve(List)} solve} method is the core of this class. Assumptions: the
  * optimal solution with non-fractional variable values has an integer objectiveMasterProblem
  * value.
  *
@@ -69,8 +69,6 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
 
     /** Defines whether the master problem is a minimization or a maximization problem **/
     protected final OptimizationSense optimizationSenseMaster;
-    /** The considered stopping criteria. **/
-    protected List<StoppingCondition> stoppingConditions;
     /** Objective value of column generation procedure **/
     protected double objectiveMasterProblem;
     /**
@@ -97,6 +95,7 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
     protected long pricingSolveTime = 0;
     /** Total number of columns generated and added to the master problem **/
     protected int nrGeneratedColumns = 0;
+    /** If new columns have been iterated on the last iteration. */
     private boolean columnsGenerated = true;
 
     /**
@@ -231,14 +230,14 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
      * attainable solution to the master problem equals the solution of the master problem.</li>
      * </ol>
      * 
-     * @param timeLimit Future point in time (ms) by which the procedure should be finished. Should
-     *        be defined as: {@code System.currentTimeMilis()+<desired runtime>}
+     * @param stoppingConditions a list of stopping conditions that should be considered for ending the
+     *                           column generation procedure
      * @throws TimeLimitExceededException Exception is thrown when time limit is exceeded
      */
     public void solve(List<StoppingCondition<T, U, V>> stoppingConditions)
         throws TimeLimitExceededException
     {
-        // find if a time limit is present
+        // Check if a time limit is present
         long timeLimit = Long.MAX_VALUE;
         for (StoppingCondition<T,U,V> stoppingCondition : stoppingConditions) {
             if (stoppingCondition instanceof TimeLimit) {
@@ -248,7 +247,7 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
         stoppingConditions.add(new AbsenceReducedCostColumns<>(this));
         stoppingConditions.add(new BoundExceedsCutoff<>(this));
         
-        // set time limit pricing problems
+        // Set time limit pricing problems
         pricingProblemManager.setTimeLimit(timeLimit);
         colGenSolveTime = System.currentTimeMillis();
 
@@ -291,7 +290,7 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
             foundNewColumns = !newColumns.isEmpty();
             columnsGenerated = foundNewColumns;
 
-            // Check whether the boundOnMasterObjective exceeds the cutoff value
+            // Check the stopping conditions
             for (StoppingCondition<T,U,V> stoppingCondition : stoppingConditions) {
                 if (stoppingCondition.isStopColumnGeneration()) {
                     if (stoppingCondition instanceof TimeLimit) {
@@ -322,16 +321,38 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
         colGenSolveTime = System.currentTimeMillis() - colGenSolveTime;
         notifier.fireFinishCGEvent();
     }
-    
-    public void solve(StoppingCondition<T,U,V>... stoppingConditions) throws TimeLimitExceededException
+
+
+    /**
+     * Solve the Column Generation problem. First, the master problem is solved. Next, the pricing
+     * problems(s) is (are) solved. To solve the pricing problems, the pricing solvers are invoked
+     * one by one in a hierarchical fashion. First the first solver is invoked to solve the pricing
+     * problems. Any new columns generated are immediately returned. If it fails to find columns,
+     * the next solver is invoked and so on. If the pricing problem discovers new columns, they are
+     * added to the master problem and the method continues with the next column generation
+     * iteration.<br>
+     * If no new columns are found, the method checks for violated inequalities. If there are
+     * violated inequalities, they are added to the master problem and the method continues with the
+     * next column generation iteration.<br>
+     * The solve procedure terminates under any of the following conditions:
+     * <ol>
+     * <li>the solver could not identify new columns</li>
+     * <li>Time limit exceeded</li>
+     * <li>The bound on the best attainable solution to the master problem is worse than the cutoff
+     * value. Assuming that the master is a minimization problem, the Colgen procedure is terminated
+     * if {@code ceil(boundOnMasterObjective) >= cutoffValue}</li>
+     * <li>The solution to the master problem is provable optimal, i.e the bound on the best
+     * attainable solution to the master problem equals the solution of the master problem.</li>
+     * </ol>
+     *
+     * @param stoppingConditions a vararg of stopping conditions that should be considered for ending the
+     *                           column generation procedure
+     * @throws TimeLimitExceededException Exception is thrown when time limit is exceeded
+     */
+    @SafeVarargs
+    public final void solve(StoppingCondition<T, U, V>... stoppingConditions) throws TimeLimitExceededException
     {
-        try
-        {
-            solve(Arrays.stream(stoppingConditions).collect(Collectors.toList()));
-        } catch (Exception e) {
-            System.out.println(e);
-            throw e;
-        }
+        solve(Arrays.stream(stoppingConditions).collect(Collectors.toList()));
     }
 
     /**
@@ -419,7 +440,7 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
      * </ul>
      * NOTE: This method is not implemented by default. NOTE2: When calling this method, it is
      * guaranteed that the master problem has not been changed (no columns or inequalities are
-     * added) since the last time its {@link #solve(long timeLimit) solve} method was invoked!
+     * added) since the last time its {@link #solve(List)}) solve} method was invoked!
      * 
      * @param solver solver which was used to solve the pricing problem during the last invocation
      * @return bound on the optimal master problem solution
@@ -532,6 +553,11 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
         return master.getCuts();
     }
     
+    /**
+     * Returns if any columns have been iterated in the last iteration.
+     *
+     * @return if any columns have been iterated in the last iteration.
+     */
     boolean columnsGenerated() {
         return columnsGenerated;
     }
