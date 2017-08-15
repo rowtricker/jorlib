@@ -27,7 +27,7 @@ public class TimeLimit<T extends ModelInterface, U extends AbstractColumn<T, V>,
     @Override
     public boolean isStopColumnGeneration()
     {
-        return colGen.getRuntime() >= allowedTime;
+        return colGen.getMasterSolveTime() + colGen.getPricingSolveTime() >= allowedTime;
     }
 
     @Override
