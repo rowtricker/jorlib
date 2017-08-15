@@ -22,7 +22,7 @@ public class AbsenceReducedCostColumns<T extends ModelInterface, U extends Abstr
     @Override
     public boolean isStopColumnGeneration()
     {
-        return colGen.getNrGeneratedColumns() == 0;
+        return !colGen.columnsGenerated();
     }
 
     @Override
