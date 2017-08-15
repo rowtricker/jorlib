@@ -386,9 +386,9 @@ public class ColGen<T extends ModelInterface, U extends AbstractColumn<T, V>,
      * @throws TimeLimitExceededException Exception is thrown when time limit is exceeded
      */
     @SafeVarargs
-    public final void solve(StoppingCondition<T, U, V>... stoppingConditions) throws TimeLimitExceededException
+    public final SolverStatus solve(StoppingCondition<T, U, V>... stoppingConditions) throws TimeLimitExceededException
     {
-        solve(Arrays.stream(stoppingConditions).collect(Collectors.toList()));
+        return solve(Arrays.stream(stoppingConditions).collect(Collectors.toList()));
     }
 
     /**
