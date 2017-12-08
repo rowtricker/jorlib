@@ -12,6 +12,7 @@
  */
 package org.jorlib.frameworks.columngeneration.branchandprice;
 
+import java.time.Duration;
 import java.util.*;
 
 import org.jorlib.frameworks.columngeneration.branchandprice.eventhandling.*;
@@ -19,6 +20,7 @@ import org.jorlib.frameworks.columngeneration.branchandprice.bapnodecomparators.
 import org.jorlib.frameworks.columngeneration.branchandprice.branchingdecisions.BranchingDecisionListener;
 import org.jorlib.frameworks.columngeneration.colgenmain.AbstractColumn;
 import org.jorlib.frameworks.columngeneration.colgenmain.ColGen;
+import org.jorlib.frameworks.columngeneration.colgenmain.TimeLimit;
 import org.jorlib.frameworks.columngeneration.io.TimeLimitExceededException;
 import org.jorlib.frameworks.columngeneration.master.AbstractMaster;
 import org.jorlib.frameworks.columngeneration.master.MasterData;
@@ -370,7 +372,7 @@ public abstract class AbstractBranchAndPrice<T extends ModelInterface,
                                                                                          // the node
             for (CGListener<T,U> listener : columnGenerationEventListeners)
                 cg.addCGEventListener(listener);
-            status = cg.solve(timeLimit);
+            status = cg.solve(new TimeLimit<>(cg, Duration.ofMillis(timeLimit - System.currentTimeMillis())));
         } finally {
             // Update statistics
             if (cg != null) {
