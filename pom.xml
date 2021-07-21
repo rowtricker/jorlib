@@ -78,7 +78,7 @@
 			<dependency>
 				<groupId>cplex</groupId>
 				<artifactId>cplex</artifactId>
-				<version>12.7</version>
+				<version>12.9</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -194,6 +194,13 @@
 					    </pluginExecutions>
 					</lifecycleMappingMetadata>
 				    </configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<configuration>
+						<argLine>-Djava.library.path=/opt/ibm/ILOG/CPLEX_Studio129/cplex/bin/x86-64_linux/</argLine>
+					</configuration>
 				</plugin>
 				
 			</plugins>
